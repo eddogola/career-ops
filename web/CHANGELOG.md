@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.15.0](https://github.com/career-ops-hq/career-ops/compare/web-v0.14.0...web-v0.15.0) (2026-10-12)
+
+
+### Features
+
+* add Assessment lifecycle and follow-up status controls ([#4317](https://github.com/career-ops-hq/career-ops/issues/4317)) ([8cb0161](https://github.com/career-ops-hq/career-ops/commit/8cb0161f73d1e6012976bdf2ba79dee6b91f40d1))
+* **web:** ATS keyword coverage on the report view ([#4579](https://github.com/career-ops-hq/career-ops/issues/4579)) ([886b834](https://github.com/career-ops-hq/career-ops/commit/886b834a9989e449587cf1ae9ae2ab39e50cab1e))
+* **web:** company evidence card on the report (and fix the data root it reads from) ([#4581](https://github.com/career-ops-hq/career-ops/issues/4581)) ([bcfdcdc](https://github.com/career-ops-hq/career-ops/commit/bcfdcdcb37691a921e5c4a3bebb66366d16d3a1e))
+* **web:** expand Analytics into progress and search stats ([#4310](https://github.com/career-ops-hq/career-ops/issues/4310)) ([6e0cd23](https://github.com/career-ops-hq/career-ops/commit/6e0cd23ac6b27faf22e39c16705e1da58316892e))
+* **web:** recurring skill gaps on the CV page ([#4583](https://github.com/career-ops-hq/career-ops/issues/4583)) ([85fdac2](https://github.com/career-ops-hq/career-ops/commit/85fdac23d93ecb9e2c0246e03ffec5d0a52aeba3))
+
+
+### Bug Fixes
+
+* **test-harness:** link the dependency tree a worktree inherits, in both suites ([#5055](https://github.com/career-ops-hq/career-ops/issues/5055)) ([b528fe5](https://github.com/career-ops-hq/career-ops/commit/b528fe59fc139769d22f537b2dd25012d263ad76))
+* **web/scheduled:** a lock whose stat fails is not stale ([#5013](https://github.com/career-ops-hq/career-ops/issues/5013)) ([7f30002](https://github.com/career-ops-hq/career-ops/commit/7f300029b4bdcf798a500d953f0114610c600675))
+* **web/scheduled:** retry Windows EPERM/EACCES on the lock mkdir instead of crashing ([#4917](https://github.com/career-ops-hq/career-ops/issues/4917)) ([291d53b](https://github.com/career-ops-hq/career-ops/commit/291d53babf306bd8440076447211b8578ecbccef))
+* **web:** label application review fields and confirmation hints ([#4996](https://github.com/career-ops-hq/career-ops/issues/4996)) ([cdcd8c4](https://github.com/career-ops-hq/career-ops/commit/cdcd8c42c318cf8ea234dc98b507a3024877b8fc))
+* **web:** preserve context and focus for assistant confirmations ([#5017](https://github.com/career-ops-hq/career-ops/issues/5017)) ([d0a9bb5](https://github.com/career-ops-hq/career-ops/commit/d0a9bb5303348f1ab742ec09d7ea3588ed094f5b))
+* **web:** preserve Pipeline filters when returning from a report ([#5049](https://github.com/career-ops-hq/career-ops/issues/5049)) ([4468aac](https://github.com/career-ops-hq/career-ops/commit/4468aacdfa1b49bc8be8a1a6df2ff31a38686b5a))
+* **web:** preserve report identity when generating tailored PDFs ([#4104](https://github.com/career-ops-hq/career-ops/issues/4104)) ([a8b3340](https://github.com/career-ops-hq/career-ops/commit/a8b334080677580e813317172080d00d4c56ffbd))
+* **web:** show the "report left on disk" notice when deleting a tracker row ([#5067](https://github.com/career-ops-hq/career-ops/issues/5067)) ([ae9fdeb](https://github.com/career-ops-hq/career-ops/commit/ae9fdeb26f6dc05207b828f61542d6659a17bd4f))
+* **web:** update source-map-js to 1.2.2 ([#5009](https://github.com/career-ops-hq/career-ops/issues/5009)) ([012c782](https://github.com/career-ops-hq/career-ops/commit/012c782b3bad67a1bbc963ba0afe085b3c93da46))
+
 ## [0.14.0](https://github.com/career-ops-hq/career-ops/compare/web-v0.13.0...web-v0.14.0) (2026-10-10)
 
 
