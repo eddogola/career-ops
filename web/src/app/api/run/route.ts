@@ -13,6 +13,7 @@ import { careerOpsRoot, readMemory, findReportFile, readInbox, readScanDates, re
 import { resolvePdfPaths, type PdfPaths } from "@/lib/pdf-paths.mjs";
 import { renderAndMarkPdf, writeCvHtml, pdfRunOutcome } from "@/lib/pdf-render.mjs";
 import { createCvEnvelopeFilter, type CvEnvelope } from "@/lib/cv-envelope.mjs";
+import { resumeTexSource, loadResumeSlots, buildResumePlanPrompt, createResumePlanFilter, buildAndMarkResume } from "@/lib/resume-tex.mjs";
 import { buildPrompt, isShellSafeCompanyName } from "@/lib/run-prompts.mjs";
 import { capabilitiesFor } from "@/lib/worker-capabilities.mjs";
 import { fencingReport, isCliAllowedForCapabilities } from "@/lib/cli-fencing.mjs";
@@ -133,7 +134,24 @@ export async function POST(req: Request) {
   // The root is passed, not re-derived: a relative CAREER_OPS_PROFILE resolves
   // against it, and `process.cwd()` here is `<core>/web` (see cv-template.mjs).
   const cvTemplate = kind === "pdf" ? await resolveCvTemplate(careerOpsRoot()) : undefined;
-  const prompt = buildPrompt({ kind, input, memory: readMemory(), today, postedAt, lang, cvTemplate, reportFile: pdfPaths?.reportFile });
+  // An install whose CV is its own LaTeX resume tailors that file instead of
+  // filling an HTML template (see resume-tex.mjs). The slots are read HERE for
+  // the same reason the template is resolved here: the worker has no Bash.
+  const resumeTex = kind === "pdf" && pdfPaths && resumeTexSource(careerOpsRoot()) !== null;
+  let resumeSlots: object | undefined;
+  if (resumeTex) {
+    const loaded = await loadResumeSlots({ spawnFn: spawn, execPath: process.execPath, root: careerOpsRoot() });
+    if (!loaded.ok) {
+      return new Response(JSON.stringify({ error: loaded.error }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    resumeSlots = loaded.slots;
+  }
+  const prompt = resumeSlots && pdfPaths
+    ? buildResumePlanPrompt({ input, reportFile: pdfPaths.reportFile, slots: resumeSlots, memory: readMemory(), outputLanguage: lang.output })
+    : buildPrompt({ kind, input, memory: readMemory(), today, postedAt, lang, cvTemplate, reportFile: pdfPaths?.reportFile });
 
   const isClaude = cliId === "claude";
   // Which tools each kind gets, and the whole claude argv, live in
@@ -330,7 +348,7 @@ export async function POST(req: Request) {
       // by the agent (#2185). The filter keeps every byte for the backend while
       // holding the 15-25 KB body out of the run log, which is the agent's
       // narration — see cv-envelope.mjs.
-      const cvFilter = kind === "pdf" ? createCvEnvelopeFilter() : null;
+      const cvFilter = kind !== "pdf" ? null : resumeSlots ? createResumePlanFilter() : createCvEnvelopeFilter();
       // While the agent emits the 15-25 KB <<cv-html>> envelope, cvFilter swallows
       // every byte, so the response stream goes completely silent for as long as
       // the model takes to write the CV — a minute or more. Nothing downstream can
@@ -452,6 +470,32 @@ export async function POST(req: Request) {
         }
       };
 
+      // The resume.tex twin of renderPdf: apply the plan, compile, trim to one
+      // page, then mark the tracker — in the backend, for the reasons above.
+      const buildResume = async (paths: PdfPaths, plan: object) => {
+        send({ type: "status", label: "Building resume…" });
+        try {
+          const result = await buildAndMarkResume({
+            spawnFn: spawn,
+            execPath: process.execPath,
+            root: careerOpsRoot(),
+            pdfPaths: paths,
+            plan,
+            reportNum: paths.reportNum,
+          });
+          if (result.kind === "render-failed") {
+            send({ type: "error", msg: result.error.slice(0, 300) });
+            return;
+          }
+          sendWarnings(result.warnings);
+          send({ type: "done", tokens: lastTokens, costUsd: lastCostUsd });
+        } catch (e) {
+          send({ type: "error", msg: `Building the resume crashed unexpectedly: ${e instanceof Error ? e.message : String(e)}`.slice(0, 200) });
+        } finally {
+          close();
+        }
+      };
+
       child.on("error", (e) => { send({ type: "error", msg: e.message }); close(); });
       child.on("close", (code) => {
         // A trailing line with no newline would otherwise never be tested.
@@ -520,6 +564,10 @@ export async function POST(req: Request) {
             // bare close() — a stream that ends with neither error nor done is the
             // one outcome this handler exists to prevent.
             send({ type: "error", msg: "Internal error: the pdf run passed its gate with no CV to save — please report this." });
+          } else if ("plan" in envelope) {
+            sendWarnings(envelope.warnings);
+            pdfRenderPromise = buildResume(pdfPaths, envelope.plan);
+            return;
           } else {
             sendWarnings(envelope.warnings);
             if (saveCv(pdfPaths, envelope)) {
